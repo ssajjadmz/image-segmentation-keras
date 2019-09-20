@@ -21,7 +21,6 @@ Link to the full blog post with tutorial : https://divamgupta.com/image-segmenta
 
 Divam Gupta : https://divamgupta.com
 
-
 ## Models 
 
 Following models are supported:
