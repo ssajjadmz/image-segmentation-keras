@@ -18,7 +18,7 @@ from .models import model_from_name
 import six
 
 random.seed(0)
-class_colors = [  ( random.randint(0,255),random.randint(0,255),random.randint(0,255)   ) for _ in range(5000)  ]
+class_colors = [  ( random.randint(50,150),random.randint(50,100),random.randint(0,0)   ) for _ in range(5000)  ]
 
 
 def model_from_checkpoint_path( checkpoints_path ):
@@ -63,11 +63,13 @@ def predict( model=None , inp=None , out_fname=None , checkpoints_path=None    )
 	colors = class_colors
 
 	for c in range(n_classes):
-		seg_img[:,:,0] += ( (pr[:,: ] == c )*( colors[c][0] )).astype('uint8')
-		seg_img[:,:,1] += ((pr[:,: ] == c )*( colors[c][1] )).astype('uint8')
-		seg_img[:,:,2] += ((pr[:,: ] == c )*( colors[c][2] )).astype('uint8')
+		if c != 0:
+			seg_img[:,:,0] += ( (pr[:,: ] == c )*( colors[c][0] )).astype('uint8')
+			seg_img[:,:,1] += ((pr[:,: ] == c )*( colors[c][1] )).astype('uint8')
+			seg_img[:,:,2] += ((pr[:,: ] == c )*( colors[c][2] )).astype('uint8')
 
 	seg_img = cv2.resize(seg_img  , (orininal_w , orininal_h ))
+	seg_img += inp
 
 	if not out_fname is None:
 		cv2.imwrite(  out_fname , seg_img )
