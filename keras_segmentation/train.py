@@ -1,20 +1,17 @@
 import argparse
 import json
-from .data_utils.data_loader import image_segmentation_generator , verify_segmentation_dataset
+from .data_utils.data_loader import image_segmentation_generator , verify_segmentation_dataset , get_pairs_from_paths
 from .models import model_from_name
 import os
 import six
+from keras.callbacks import ModelCheckpoint
 
 def find_latest_checkpoint( checkpoints_path ):
-	ep = 0
-	r = None
-	while True:
-		if os.path.isfile( checkpoints_path + "." + str( ep )  ):
-			r = checkpoints_path + "." + str( ep ) 
-		else:
-			return r 
+	if os.path.isfile( checkpoints_path ):
+		return checkpoints_path 
+	else:
+		return None 
 
-		ep += 1
 
 
 
@@ -35,7 +32,7 @@ def train( model  ,
 		val_batch_size=2 , 
 		auto_resume_checkpoint=False ,
 		load_weights=None ,
-		steps_per_epoch=512,
+		steps_per_epoch=128,
 		optimizer_name='adadelta' 
 	):
 
@@ -94,30 +91,34 @@ def train( model  ,
 
 
 	train_gen = image_segmentation_generator( train_images , train_annotations ,  batch_size,  n_classes , input_height , input_width , output_height , output_width   )
+	pairs = get_pairs_from_paths( train_images , train_annotations )
+	steps_per_epoch = int(len(pairs) / batch_size)
 
 
 	if validate:
 		val_gen  = image_segmentation_generator( val_images , val_annotations ,  val_batch_size,  n_classes , input_height , input_width , output_height , output_width   )
 
-
+	if not checkpoints_path is None:
+		filepath = checkpoints_path
+		checkpoint = ModelCheckpoint(filepath, monitor='acc', verbose=2, save_best_only=True, mode='max')
+		callbacks_list = [checkpoint]
+	
 	if not validate:
 		for ep in range( epochs ):
 			print("Starting Epoch " , ep )
-			model.fit_generator( train_gen , steps_per_epoch  , epochs=1 )
+			
 			if not checkpoints_path is None:
-				model.save_weights( checkpoints_path + "." + str( ep ) )
-				print("saved " , checkpoints_path + ".model." + str( ep ) )
+				model.fit_generator( train_gen , steps_per_epoch  , epochs=1 , callbacks=callbacks_list , verbose= 1 )
+			else:
+				model.fit_generator( train_gen , steps_per_epoch  , epochs=1 , verbose= 1)
 			print("Finished Epoch" , ep )
 	else:
 		for ep in range( epochs ):
 			print("Starting Epoch " , ep )
-			model.fit_generator( train_gen , steps_per_epoch  , validation_data=val_gen , validation_steps=200 ,  epochs=1 )
+			
 			if not checkpoints_path is None:
-				model.save_weights( checkpoints_path + "." + str( ep )  )
-				print("saved " , checkpoints_path + ".model." + str( ep ) )
+				model.fit_generator( train_gen , steps_per_epoch  , validation_data=val_gen , validation_steps=200 ,  epochs=1 , callbacks=callbacks_list , verbose= 0)
+			else:
+				model.fit_generator( train_gen , steps_per_epoch  , validation_data=val_gen , validation_steps=200 ,  epochs=1 , verbose= 0)
+				
 			print("Finished Epoch" , ep )
-
-
-
-
-
