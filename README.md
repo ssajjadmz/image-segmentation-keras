@@ -20,6 +20,7 @@ Link to the full blog post with tutorial : https://divamgupta.com/image-segmenta
 ### Contributors 
 
 Divam Gupta : https://divamgupta.com
+
 *a little bit more speedup in training
 ## Models 
 
